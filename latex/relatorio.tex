@@ -14,14 +14,12 @@
 \usepackage{mathpartir}
 \usepackage{tcolorbox}
 \usepackage{amsmath,amssymb}
-\usepackage{underscore}
 
 \newcommand{\tto}{\twoheadrightarrow}
 \newcommand{\ott}{\twoheadleftarrow}
 
-\title{Tema 5: Equivalência entre diferentes noções de indução\\
+\title{Tema 5: Formalização de diferentes noções de indução \\
 {\large Projeto de Lógica Computacional 1 --- 2026/1}}
-% TODO: preencher nomes e matrículas dos integrantes do grupo
 \author{Davi de Araujo Garcez Bueno --- 211060586\\
         Gustavo Rinaldi Braga de Albuquerque --- 222008664\\
         Lucca Magalhães Boselli Couto --- 222011552}
@@ -30,6 +28,129 @@
 \begin{document}
 \maketitle
 
-\input{../src/ind_equiv.v}
+\section*{Introdução}
+
+Este relatório documenta o desenvolvimento do tema 5 do projeto da
+disciplina de Lógica Computacional 1 (2026/1): a formalização, no
+assistente de provas Coq/Rocq, da equivalência entre o Princípio da
+Indução Matemática (PIM), o Princípio da Indução Forte (PIF) e o
+Princípio da Boa Ordenação (PBO). Os três princípios são enunciados
+como proposições de ordem superior sobre predicados de números
+naturais, e os três teoremas pedidos no enunciado
+(\coqdocvar{PIM\_equiv\_PIF}, \coqdocvar{PBO\_equiv\_PIM} e
+\coqdocvar{PBO\_equiv\_PIF}) foram integralmente provados, sem
+nenhum \coqdockw{Admitted} remanescente.
+
+O resultado central do trabalho, além das provas em si, é uma
+observação de natureza lógica que conecta o projeto ao conteúdo
+teórico da disciplina: a equivalência entre PIM e PIF é
+\emph{totalmente construtiva} (não depende de axioma algum, como
+atesta o comando \coqdocvar{Print Assumptions}), enquanto as duas
+direções que envolvem o PBO exigem raciocínio clássico ---
+concretamente, a eliminação da dupla negação (\coqdocvar{NNPP}),
+derivada do axioma do terceiro excluído. Isso reflete a hierarquia
+de poder dedutivo LPM $\subset$ LPI $\subset$ LPC estudada em sala:
+o PBO é um princípio genuinamente clássico, pois afirma a
+existência de um menor elemento sem fornecer meio efetivo de
+computá-lo.
+
+\section*{Estrutura do repositório}
+
+O repositório está organizado conforme o esqueleto disponibilizado
+pelo professor:
+
+\begin{itemize}
+  \item \texttt{src/ind\_equiv.v} --- único arquivo de provas do
+    projeto. Contém as três definições (PIM, PIF, PBO), quatro
+    lemas auxiliares (um para cada implicação fundamental) e os três
+    teoremas de equivalência. A documentação em linguagem natural
+    está embutida no próprio arquivo como comentários
+    \texttt{coqdoc}, e é a partir dela que o corpo deste relatório é
+    gerado;
+  \item \texttt{latex/relatorio.tex} --- este documento, que inclui
+    o corpo gerado por \texttt{coqdoc} no modo \texttt{--gallina}
+    (apenas enunciados e prosa; os scripts de prova são omitidos,
+    conforme a recomendação de evitar colar código no relatório);
+  \item \texttt{Makefile} --- fluxo de compilação original do
+    professor: \texttt{make} verifica as provas com \texttt{coqc} e
+    \texttt{make doc} gera este PDF.
+\end{itemize}
+
+A verificação foi realizada com o Coq versão 8.18.0.
+
+\section*{Organização das provas e adaptações realizadas}
+
+Em relação ao código disponibilizado como ponto de partida, foram
+feitas três adaptações, todas motivadas e justificadas a seguir e
+retomadas em detalhe no corpo do texto:
+
+\begin{enumerate}
+  \item \textbf{Decomposição em lemas.} Cada teorema de equivalência
+    é uma bi-implicação, mas as seis direções envolvidas não são
+    independentes: elas formam um triângulo
+    PIM $\to$ PIF $\to$ PBO $\to$ PIM. Provamos, portanto, quatro
+    lemas (\coqdocvar{PIM\_implies\_PIF},
+    \coqdocvar{PIF\_implies\_PIM}, \coqdocvar{PBO\_implies\_PIM} e
+    \coqdocvar{PIF\_implies\_PBO}) e obtivemos as demais direções
+    por composição, evitando duplicação de argumentos.
+  \item \textbf{Importação da biblioteca \texttt{Classical}.} As
+    provas que envolvem o PBO usam o argumento do menor
+    contraexemplo e a prova de existência por contradição, ambos
+    raciocínios clássicos. A biblioteca fornece o lema
+    \coqdocvar{NNPP}. O comando \coqdocvar{Print Assumptions}
+    confirma que \coqdocvar{classic} é o \emph{único} axioma
+    utilizado em todo o desenvolvimento. Cabe enfatizar que a
+    inclusão dessa biblioteca não é um atalho, mas uma necessidade
+    estrutural: como o Coq é baseado em lógica intuicionista e o
+    predicado $P$ do PBO é arbitrário (portanto, sem procedimento de
+    decisão construtivo), a existência de um elemento mínimo não
+    pode ser estabelecida sem raciocínio clássico. Essa necessidade
+    não é apenas plausível --- ela é \emph{demonstrada} no próprio
+    desenvolvimento: o lema \coqdocvar{PBO\_implies\_classic}, cuja
+    prova é totalmente construtiva, mostra que o PBO implica o
+    terceiro excluído, de modo que qualquer derivação de PBO sem
+    axiomas clássicos tornaria o terceiro excluído um teorema do
+    Coq, o que é sabidamente falso. Nesse sentido preciso, o PBO
+    mostra-se equivalente aos princípios clássicos: implica o
+    terceiro excluído construtivamente e, reciprocamente, sua
+    derivação a partir do PIM depende de raciocínio clássico.
+  \item \textbf{Importação da biblioteca \texttt{Lia}.} A tática
+    \texttt{lia} decide fatos de aritmética linear (por exemplo,
+    que não existe $m < 0$, ou que $m < k+1$ implica $m < k$ ou
+    $m = k$). Ela é usada exclusivamente para essas obrigações
+    aritméticas elementares, nunca para o conteúdo lógico das
+    provas.
+\end{enumerate}
+
+Um cuidado metodológico importante: em nenhuma das provas de
+implicação utilizamos a tática \texttt{induction} sobre os naturais.
+Como o objetivo é derivar um princípio de indução \emph{a partir de
+outro}, usar a indução estrutural nativa do Coq tornaria as provas
+circulares do ponto de vista conceitual (o Coq prova PIM e PIF
+diretamente via \coqdocvar{nat\_ind}). Usamos apenas
+\texttt{destruct} (análise de casos sobre os construtores
+\coqdocvar{0} e \coqdocvar{S}, que faz parte da própria definição de
+\coqdocvar{nat}) e fatos aritméticos elementares sobre a ordem $<$.
+
+\bigskip
+
+O corpo a seguir, gerado a partir dos comentários do arquivo de
+provas, descreve em linguagem natural a estratégia de cada uma das
+quatro implicações e dos três teoremas.
+
+\input{ind_equiv.v}
+
+\section*{Conclusão}
+
+Todos os teoremas propostos no enunciado foram provados e verificados
+mecanicamente pelo Coq. A formalização evidenciou três pontos que
+consideramos os principais aprendizados do projeto: (i) a técnica de
+\emph{fortalecimento do predicado} como ferramenta para transferir
+indução simples para indução forte; (ii) o argumento do \emph{menor
+contraexemplo} como ponte entre boa ordenação e indução; e (iii) a
+fronteira precisa entre o que é construtivo e o que é clássico nesse
+grupo de princípios --- fronteira que o assistente de provas torna
+explícita e verificável por meio do rastreamento de axiomas, algo
+difícil de garantir em provas de papel.
 
 \end{document}

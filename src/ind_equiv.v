@@ -1,11 +1,43 @@
-(** Equivalência entre o Princípio da Indução Matemática e o Princípio da Indução Forte *)
+(** * Equivalência entre diferentes noções de indução
+
+    Este trabalho formaliza, no assistente de provas Coq/Rocq, a
+    equivalência entre três princípios fundamentais sobre os números
+    naturais: o Princípio da Indução Matemática (PIM), o Princípio da
+    Indução Forte (PIF) e o Princípio da Boa Ordenação (PBO).
+
+    A formalização está organizada da seguinte forma: primeiro
+    enunciamos os três princípios como definições de ordem superior
+    (proposições que quantificam sobre predicados [P: nat -> Prop]);
+    em seguida, provamos quatro lemas, um para cada implicação
+    fundamental ([PIM -> PIF], [PIF -> PIM], [PBO -> PIM] e
+    [PIF -> PBO]); por fim, os três teoremas de equivalência pedidos
+    no enunciado são obtidos por composição desses lemas.
+
+    Uma observação importante, discutida em detalhe ao longo do
+    texto: a equivalência entre PIM e PIF é provada de forma
+    puramente construtiva (intuicionista), mas as duas direções que
+    envolvem o PBO exigem raciocínio clássico. Por esse motivo,
+    adicionamos ao código original do professor a importação da
+    biblioteca [Classical], que disponibiliza o axioma do terceiro
+    excluído e, em particular, a eliminação da dupla negação
+    ([NNPP : forall P, ~~P -> P]). Também importamos a biblioteca
+    [Lia], que fornece uma tática de decisão para aritmética linear,
+    usada para descartar obrigações aritméticas simples (como
+    [m < 0 -> False] ou [m < S k -> m < k \/ m = k]) sem poluir as
+    provas com manipulações manuais de desigualdades. *)
 
 (* begin hide *)
 Require Import Arith Lia.
 Require Import Classical.
 (* end hide *)
 
-(** Seja [P] uma propriedade sobre os números naturais. O Princípio da Indução Matemática (PIM) pode ser enunciado da seguinte forma:  *)
+(** ** Os três princípios
+
+    Seja [P] uma propriedade sobre os números naturais. O Princípio
+    da Indução Matemática (PIM) afirma que, para provar que todo
+    natural satisfaz [P], basta provar o caso base [P 0] e o passo
+    indutivo: se [P] vale para um natural [k] qualquer, então vale
+    para o seu sucessor [S k]. *)
 
 Definition PIM :=
   forall P: nat -> Prop,
@@ -13,15 +45,24 @@ Definition PIM :=
     (forall k, P k -> P (S k)) ->
     forall n, P n.
 
-(** Seja [Q] uma propriedade sobre os números naturais. O Princípio da Indução Forte (PIF) pode ser enunciado da seguinte forma:  *)
+(** O Princípio da Indução Forte (PIF) substitui a hipótese de
+    indução "[P] vale para o antecessor" pela hipótese mais rica
+    "[P] vale para _todos_ os naturais estritamente menores que
+    [k]". Note que o PIF não possui caso base explícito: quando
+    [k = 0], a hipótese [forall m, m < 0 -> Q m] é satisfeita por
+    vacuidade, e portanto a premissa do PIF exige que [Q 0] seja
+    provado "do nada", o que faz o papel do caso base. *)
 
 Definition PIF :=
   forall Q: nat -> Prop,
     (forall k, (forall m, m<k -> Q m) -> Q k) ->
     forall n, Q n.
 
+(** O Princípio da Boa Ordenação (PBO) afirma que todo predicado
+    habitado sobre os naturais possui um menor elemento: se existe
+    algum [n] tal que [P n], então existe um [m] tal que [P m] e
+    nenhum natural estritamente menor que [m] satisfaz [P]. *)
 
-(** Dado um predicado [P] sobre naturais, se existe um natural [n] que satisfaz a propriedade [P], então existe um [m] que é o menor natural que satisfaz a propriedade [P]. Esta propriedade é conhecida como o Princípio da Boa Ordenação (PBO): *)
 Definition PBO := forall P : nat -> Prop,
   (exists n : nat, P n) ->
   exists m : nat, P m /\ forall x : nat, x < m -> ~ P x.
@@ -298,6 +339,3 @@ Print Assumptions PIM_equiv_PIF.
 Print Assumptions PBO_equiv_PIF.
 Print Assumptions PBO_implies_classic.
 (* end hide *)
-
-(** Repositório original do professor:
-    %\url{https://github.com/flaviodemoura/ind_equiv}% *)

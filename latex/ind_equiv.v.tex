@@ -1,0 +1,371 @@
+\begin{coqdoccode}
+\end{coqdoccode}
+\section{Equivalência entre diferentes noções de indução}
+
+
+
+
+    Este trabalho formaliza, no assistente de provas Coq/Rocq, a
+    equivalência entre três princípios fundamentais sobre os números
+    naturais: o Princípio da Indução Matemática (PIM), o Princípio da
+    Indução Forte (PIF) e o Princípio da Boa Ordenação (PBO).
+
+
+    A formalização está organizada da seguinte forma: primeiro
+    enunciamos os três princípios como definições de ordem superior
+    (proposições que quantificam sobre predicados \coqdocvar{P}: \coqexternalref{nat}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocinductive{nat}} \ensuremath{\rightarrow} \coqdockw{Prop});
+    em seguida, provamos quatro lemas, um para cada implicação
+    fundamental (\coqref{ind equiv.PIM}{\coqdocdefinition{PIM}} \ensuremath{\rightarrow} \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}}, \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}} \ensuremath{\rightarrow} \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}}, \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} \ensuremath{\rightarrow} \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}} e
+    \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}} \ensuremath{\rightarrow} \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}}); por fim, os três teoremas de equivalência pedidos
+    no enunciado são obtidos por composição desses lemas.
+
+
+    Uma observação importante, discutida em detalhe ao longo do
+    texto: a equivalência entre PIM e PIF é provada de forma
+    puramente construtiva (intuicionista), mas as duas direções que
+    envolvem o PBO exigem raciocínio clássico. Por esse motivo,
+    adicionamos ao código original do professor a importação da
+    biblioteca \coqdoclibrary{Classical}, que disponibiliza o axioma do terceiro
+    excluído e, em particular, a eliminação da dupla negação
+    (\coqexternalref{NNPP}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Logic.Classical\_Prop}{\coqdoclemma{NNPP}} : \coqdockw{\ensuremath{\forall}} \coqdocvar{P}, \~{}\~{}\coqdocvar{P} \ensuremath{\rightarrow} \coqdocvar{P}). Também importamos a biblioteca
+    \coqdoclibrary{Lia}, que fornece uma tática de decisão para aritmética linear,
+    usada para descartar obrigações aritméticas simples (como
+    \coqdocvar{m} < 0 \ensuremath{\rightarrow} \coqdocvar{False} ou \coqdocvar{m} < \coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{k} \ensuremath{\rightarrow} \coqdocvar{m} < \coqdocvar{k} \ensuremath{\lor} \coqdocvar{m} = \coqdocvar{k}) sem poluir as
+    provas com manipulações manuais de desigualdades. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocemptyline
+\end{coqdoccode}
+\subsection{Os três princípios}
+
+
+
+
+    Seja \coqdocvar{P} uma propriedade sobre os números naturais. O Princípio
+    da Indução Matemática (PIM) afirma que, para provar que todo
+    natural satisfaz \coqdocvar{P}, basta provar o caso base \coqdocvar{P} 0 e o passo
+    indutivo: se \coqdocvar{P} vale para um natural \coqdocvar{k} qualquer, então vale
+    para o seu sucessor \coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{k}. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Definition} \coqdef{ind equiv.PIM}{PIM}{\coqdocdefinition{PIM}} :=\coqdoceol
+\coqdocindent{1.00em}
+\coqdockw{\ensuremath{\forall}} \coqdef{ind equiv.P:1}{P}{\coqdocbinder{P}}: \coqexternalref{nat}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocinductive{nat}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqdockw{Prop},\coqdoceol
+\coqdocindent{2.00em}
+\coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{(}}\coqref{ind equiv.P:1}{\coqdocvariable{P}} 0\coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{)}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}}\coqdoceol
+\coqdocindent{2.00em}
+\coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{(}}\coqdockw{\ensuremath{\forall}} \coqdef{ind equiv.k:2}{k}{\coqdocbinder{k}}, \coqref{ind equiv.P:1}{\coqdocvariable{P}} \coqref{ind equiv.k:2}{\coqdocvariable{k}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqref{ind equiv.P:1}{\coqdocvariable{P}} (\coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqref{ind equiv.k:2}{\coqdocvariable{k}})\coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{)}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}}\coqdoceol
+\coqdocindent{2.00em}
+\coqdockw{\ensuremath{\forall}} \coqdef{ind equiv.n:3}{n}{\coqdocbinder{n}}, \coqref{ind equiv.P:1}{\coqdocvariable{P}} \coqref{ind equiv.n:3}{\coqdocvariable{n}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+O Princípio da Indução Forte (PIF) substitui a hipótese de
+    indução ``\coqdocvar{P} vale para o antecessor'' pela hipótese mais rica
+    ``\coqdocvar{P} vale para \textit{todos} os naturais estritamente menores que
+    \coqdocvar{k}''. Note que o PIF não possui caso base explícito: quando
+    \coqdocvar{k} = 0, a hipótese \coqdockw{\ensuremath{\forall}} \coqdocvar{m}, \coqdocvar{m} < 0 \ensuremath{\rightarrow} \coqdocvar{Q} \coqdocvar{m} é satisfeita por
+    vacuidade, e portanto a premissa do PIF exige que \coqdocvar{Q} 0 seja
+    provado ``do nada'', o que faz o papel do caso base. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Definition} \coqdef{ind equiv.PIF}{PIF}{\coqdocdefinition{PIF}} :=\coqdoceol
+\coqdocindent{1.00em}
+\coqdockw{\ensuremath{\forall}} \coqdef{ind equiv.Q:4}{Q}{\coqdocbinder{Q}}: \coqexternalref{nat}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocinductive{nat}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqdockw{Prop},\coqdoceol
+\coqdocindent{2.00em}
+\coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{(}}\coqdockw{\ensuremath{\forall}} \coqdef{ind equiv.k:5}{k}{\coqdocbinder{k}}, \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{(}}\coqdockw{\ensuremath{\forall}} \coqdef{ind equiv.m:6}{m}{\coqdocbinder{m}}, \coqref{ind equiv.m:6}{\coqdocvariable{m}}\coqexternalref{::nat scope:x '<' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Peano}{\coqdocnotation{<}}\coqref{ind equiv.k:5}{\coqdocvariable{k}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqref{ind equiv.Q:4}{\coqdocvariable{Q}} \coqref{ind equiv.m:6}{\coqdocvariable{m}}\coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{)}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqref{ind equiv.Q:4}{\coqdocvariable{Q}} \coqref{ind equiv.k:5}{\coqdocvariable{k}}\coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{)}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}}\coqdoceol
+\coqdocindent{2.00em}
+\coqdockw{\ensuremath{\forall}} \coqdef{ind equiv.n:7}{n}{\coqdocbinder{n}}, \coqref{ind equiv.Q:4}{\coqdocvariable{Q}} \coqref{ind equiv.n:7}{\coqdocvariable{n}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+O Princípio da Boa Ordenação (PBO) afirma que todo predicado
+    habitado sobre os naturais possui um menor elemento: se existe
+    algum \coqdocvar{n} tal que \coqdocvar{P} \coqdocvar{n}, então existe um \coqdocvar{m} tal que \coqdocvar{P} \coqdocvar{m} e
+    nenhum natural estritamente menor que \coqdocvar{m} satisfaz \coqdocvar{P}. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Definition} \coqdef{ind equiv.PBO}{PBO}{\coqdocdefinition{PBO}} := \coqdockw{\ensuremath{\forall}} \coqdef{ind equiv.P:8}{P}{\coqdocbinder{P}} : \coqexternalref{nat}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocinductive{nat}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqdockw{Prop},\coqdoceol
+\coqdocindent{1.00em}
+\coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{(}}\coqexternalref{::type scope:'exists' x '..' x ',' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\exists}}} \coqdef{ind equiv.n:9}{n}{\coqdocbinder{n}} : \coqexternalref{nat}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocinductive{nat}}\coqexternalref{::type scope:'exists' x '..' x ',' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{,}} \coqref{ind equiv.P:8}{\coqdocvariable{P}} \coqref{ind equiv.n:9}{\coqdocvariable{n}}\coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{)}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}}\coqdoceol
+\coqdocindent{1.00em}
+\coqexternalref{::type scope:'exists' x '..' x ',' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\exists}}} \coqdef{ind equiv.m:10}{m}{\coqdocbinder{m}} : \coqexternalref{nat}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocinductive{nat}}\coqexternalref{::type scope:'exists' x '..' x ',' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{,}} \coqref{ind equiv.P:8}{\coqdocvariable{P}} \coqref{ind equiv.m:10}{\coqdocvariable{m}} \coqexternalref{::type scope:x '/x5C' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\land}}} \coqdockw{\ensuremath{\forall}} \coqdef{ind equiv.x:11}{x}{\coqdocbinder{x}} : \coqexternalref{nat}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocinductive{nat}}, \coqref{ind equiv.x:11}{\coqdocvariable{x}} \coqexternalref{::nat scope:x '<' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Peano}{\coqdocnotation{<}} \coqref{ind equiv.m:10}{\coqdocvariable{m}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqexternalref{::type scope:'x7E' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\lnot}}} \coqref{ind equiv.P:8}{\coqdocvariable{P}} \coqref{ind equiv.x:11}{\coqdocvariable{x}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+\subsection{Lemas: as quatro implicações fundamentais}
+
+
+
+
+\subsubsection{PIM implica PIF}
+
+
+
+
+    Esta é a direção mais sutil da primeira equivalência. A
+    dificuldade é que a hipótese de indução do PIM (\coqdocvar{P} \coqdocvar{k}) é mais
+    fraca do que a do PIF (\coqdockw{\ensuremath{\forall}} \coqdocvar{m}, \coqdocvar{m} < \coqdocvar{k} \ensuremath{\rightarrow} \coqdocvar{Q} \coqdocvar{m}), de modo que
+    não é possível aplicar o PIM diretamente ao predicado \coqdocvar{Q}.
+
+
+    A solução é a técnica clássica de \textit{fortalecimento do predicado}:
+    aplicamos o PIM não a \coqdocvar{Q}, mas ao predicado auxiliar
+
+
+    \coqdocvar{P} \coqdocvar{n} := \coqdockw{\ensuremath{\forall}} \coqdocvar{m}, \coqdocvar{m} < \coqdocvar{n} \ensuremath{\rightarrow} \coqdocvar{Q} \coqdocvar{m}
+
+
+    (``todos os naturais menores que \coqdocvar{n} satisfazem \coqdocvar{Q}''). Para esse
+    predicado fortalecido, o esquema base/passo do PIM funciona:
+
+
+
+\begin{itemize}
+\item  \textit{Base} (\coqdocvar{P} 0): não existe \coqdocvar{m} < 0, logo a afirmação vale por
+      vacuidade;
+
+
+
+\item  \textit{Passo} (\coqdocvar{P} \coqdocvar{k} \ensuremath{\rightarrow} \coqdocvar{P} (\coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{k})): supondo que todo \coqdocvar{m} < \coqdocvar{k} satisfaz
+      \coqdocvar{Q}, queremos que todo \coqdocvar{m} < \coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{k} satisfaça \coqdocvar{Q}. Ora, \coqdocvar{m} < \coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{k}
+      significa \coqdocvar{m} < \coqdocvar{k} ou \coqdocvar{m} = \coqdocvar{k}. No primeiro caso, a hipótese de
+      indução resolve; no segundo, \coqdocvar{Q} \coqdocvar{k} segue exatamente da premissa
+      do PIF aplicada à hipótese de indução.
+
+\end{itemize}
+
+
+    Concluído o argumento indutivo, obtemos \coqdockw{\ensuremath{\forall}} \coqdocvar{n} \coqdocvar{m}, \coqdocvar{m} < \coqdocvar{n} \ensuremath{\rightarrow} \coqdocvar{Q} \coqdocvar{m};
+    para extrair \coqdocvar{Q} \coqdocvar{n}, basta instanciar essa conclusão em \coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{n} e
+    usar \coqdocvar{n} < \coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{n}. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Lemma} \coqdef{ind equiv.PIM implies PIF}{PIM\_implies\_PIF}{\coqdoclemma{PIM\_implies\_PIF}}: \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+\subsubsection{PIF implica PIM}
+
+
+
+
+    Esta direção é direta, pois a hipótese de indução do PIF é mais
+    forte que a do PIM. Dado um predicado \coqdocvar{P} com caso base \coqdocvar{P} 0 e
+    passo \coqdockw{\ensuremath{\forall}} \coqdocvar{k}, \coqdocvar{P} \coqdocvar{k} \ensuremath{\rightarrow} \coqdocvar{P} (\coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{k}), aplicamos o PIF a \coqdocvar{P} e
+    precisamos apenas mostrar a sua premissa: para todo \coqdocvar{k}, se todo
+    \coqdocvar{m} < \coqdocvar{k} satisfaz \coqdocvar{P}, então \coqdocvar{P} \coqdocvar{k}. Fazemos análise de casos
+    (não indução!) sobre \coqdocvar{k}:
+
+
+
+\begin{itemize}
+\item  se \coqdocvar{k} = 0, o objetivo é \coqdocvar{P} 0, que é exatamente o caso base;
+
+
+
+\item  se \coqdocvar{k} = \coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{k'}, a hipótese do PIF aplicada a \coqdocvar{k'} < \coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{k'} fornece
+      \coqdocvar{P} \coqdocvar{k'}, e o passo indutivo do PIM produz \coqdocvar{P} (\coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{k'}).
+
+\end{itemize}
+
+
+    Vale destacar que aqui usamos apenas \coqdoctac{destruct} (análise de
+    casos sobre os construtores de \coqexternalref{nat}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocinductive{nat}}), e não a tática
+    \coqdoctac{induction}: a ``força'' indutiva vem inteiramente da hipótese
+    PIF, como deve ser em uma prova de implicação entre princípios. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Lemma} \coqdef{ind equiv.PIF implies PIM}{PIF\_implies\_PIM}{\coqdoclemma{PIF\_implies\_PIM}}: \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+\subsubsection{PBO implica PIM}
+
+
+
+
+    Este é o clássico argumento do \textit{menor contraexemplo}, e é aqui
+    que a lógica clássica entra pela primeira vez. Queremos provar
+    \coqdocvar{P} \coqdocvar{n} para um \coqdocvar{n} arbitrário, dados o caso base e o passo
+    indutivo. Raciocinamos por contradição (via \coqexternalref{NNPP}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Logic.Classical\_Prop}{\coqdoclemma{NNPP}}): suponha
+    \ensuremath{\lnot} \coqdocvar{P} \coqdocvar{n}. Então o predicado \coqdockw{fun} \coqdocvar{x} \ensuremath{\Rightarrow} \ensuremath{\lnot} \coqdocvar{P} \coqdocvar{x} é habitado (por \coqdocvar{n}),
+    e o PBO aplicado a ele fornece um \textit{menor contraexemplo}: um
+    natural \coqdocvar{m} tal que \ensuremath{\lnot} \coqdocvar{P} \coqdocvar{m} e todo \coqdocvar{x} < \coqdocvar{m} satisfaz \ensuremath{\lnot} \ensuremath{\lnot} \coqdocvar{P} \coqdocvar{x}.
+    Analisamos os dois casos possíveis para \coqdocvar{m}:
+
+
+
+\begin{itemize}
+\item  \coqdocvar{m} = 0: então \ensuremath{\lnot} \coqdocvar{P} 0, contradizendo diretamente o caso base;
+
+
+
+\item  \coqdocvar{m} = \coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{m'}: como \coqdocvar{m'} < \coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{m'}, a minimalidade fornece \ensuremath{\lnot} \ensuremath{\lnot} \coqdocvar{P} \coqdocvar{m'};
+      por eliminação da dupla negação (\coqexternalref{NNPP}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Logic.Classical\_Prop}{\coqdoclemma{NNPP}}), obtemos \coqdocvar{P} \coqdocvar{m'}, e o
+      passo indutivo produz \coqdocvar{P} (\coqexternalref{S}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Datatypes}{\coqdocconstructor{S}} \coqdocvar{m'}), contradizendo \ensuremath{\lnot} \coqdocvar{P} \coqdocvar{m}.
+
+\end{itemize}
+
+
+    Em ambos os casos chegamos ao absurdo, o que encerra a prova.
+    Note que o \coqexternalref{NNPP}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Logic.Classical\_Prop}{\coqdoclemma{NNPP}} é usado em dois pontos: na estrutura externa
+    (provar \coqdocvar{P} \coqdocvar{n} por contradição) e na extração de \coqdocvar{P} \coqdocvar{m'} a partir
+    de \ensuremath{\lnot} \ensuremath{\lnot} \coqdocvar{P} \coqdocvar{m'}. Nenhum dos dois passos é válido em lógica
+    intuicionista, o que é coerente com o fato, visto em sala, de
+    que LPM $\subset$ LPI $\subset$ LPC em poder dedutivo. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Lemma} \coqdef{ind equiv.PBO implies PIM}{PBO\_implies\_PIM}{\coqdoclemma{PBO\_implies\_PIM}}: \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+\subsubsection{PIF implica PBO}
+
+
+
+
+    Esta direção também exige lógica clássica, pois o PBO pede a
+    \textit{existência} de um mínimo, e a estratégia natural é prová-la por
+    contradição. Suponha que exista \coqdocvar{n} com \coqdocvar{P} \coqdocvar{n}, mas que \textit{não}
+    exista o menor elemento prometido pelo PBO. Mostramos então, por
+    indução forte, que na verdade nenhum natural satisfaz \coqdocvar{P} — o
+    que contradiz a hipótese de que \coqdocvar{P} é habitado.
+
+
+    O passo da indução forte é o coração do argumento: seja \coqdocvar{k}
+    arbitrário e suponha (hipótese de indução) que nenhum \coqdocvar{m} < \coqdocvar{k}
+    satisfaz \coqdocvar{P}. Se, ainda assim, valesse \coqdocvar{P} \coqdocvar{k}, então \coqdocvar{k} seria
+    exatamente um menor elemento de \coqdocvar{P}: ele satisfaz \coqdocvar{P}, e todos os
+    menores não satisfazem (pela hipótese de indução). Isso contradiz
+    a suposição de que o mínimo não existe. Logo \ensuremath{\lnot} \coqdocvar{P} \coqdocvar{k}, fechando o
+    passo indutivo.
+
+
+    O uso de \coqexternalref{NNPP}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Logic.Classical\_Prop}{\coqdoclemma{NNPP}} aparece na estrutura externa da prova: para
+    provar a existência do mínimo por contradição, assumimos a sua
+    negação e derivamos o absurdo. Provar uma fórmula existencial
+    dessa maneira (sem exibir uma testemunha explícita) é um
+    raciocínio essencialmente clássico. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Lemma} \coqdef{ind equiv.PIF implies PBO}{PIF\_implies\_PBO}{\coqdoclemma{PIF\_implies\_PBO}}: \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+\subsection{Os teoremas de equivalência}
+
+
+
+
+    Com as quatro implicações estabelecidas, os três teoremas do
+    enunciado seguem por composição. O primeiro é imediato a partir
+    dos dois primeiros lemas. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Theorem} \coqdef{ind equiv.PIM equiv PIF}{PIM\_equiv\_PIF}{\coqdoclemma{PIM\_equiv\_PIF}}: \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}} \coqexternalref{::type scope:x '<->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\leftrightarrow}}} \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+Para a segunda equivalência, a direção \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} \ensuremath{\rightarrow} \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}} é o lema do
+    menor contraexemplo. A direção \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}} \ensuremath{\rightarrow} \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} é obtida compondo
+    \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}} \ensuremath{\rightarrow} \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}} com \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}} \ensuremath{\rightarrow} \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}}: em vez de provar essa implicação
+    do zero, reaproveitamos o trabalho já feito, o que torna a
+    formalização mais enxuta e evita duplicação de argumentos. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Theorem} \coqdef{ind equiv.PBO equiv PIM}{PBO\_equiv\_PIM}{\coqdoclemma{PBO\_equiv\_PIM}}: \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} \coqexternalref{::type scope:x '<->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\leftrightarrow}}} \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+A terceira equivalência também é obtida por composição:
+    \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} \ensuremath{\rightarrow} \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}} é a composição de \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} \ensuremath{\rightarrow} \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}} com \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}} \ensuremath{\rightarrow} \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}}, e
+    \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}} \ensuremath{\rightarrow} \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} é o quarto lema. Assim, as três equivalências
+    formam um ``triângulo'' fechado de implicações
+    (PIM $\to$ PIF $\to$ PBO $\to$ PIM), do qual qualquer
+    equivalência par a par pode ser extraída. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Theorem} \coqdef{ind equiv.PBO equiv PIF}{PBO\_equiv\_PIF}{\coqdoclemma{PBO\_equiv\_PIF}}: \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} \coqexternalref{::type scope:x '<->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\leftrightarrow}}} \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+\subsection{Verificação dos axiomas utilizados}
+
+
+
+
+    O comando \coqdockw{Print} \coqdockw{Assumptions} \coqref{ind equiv.PBO equiv PIF}{\coqdoclemma{PBO\_equiv\_PIF}} confirma que a única
+    hipótese não construtiva usada em toda a formalização é o axioma
+    \coqdocvar{classic} : \coqdockw{\ensuremath{\forall}} \coqdocvar{P} : \coqdockw{Prop}, \coqdocvar{P} \ensuremath{\lor} \ensuremath{\lnot} \coqdocvar{P} (terceiro excluído),
+    proveniente da biblioteca \coqdoclibrary{Classical}. O teorema \coqref{ind equiv.PIM equiv PIF}{\coqdoclemma{PIM\_equiv\_PIF}},
+    por sua vez, não depende de axioma algum: sua prova é totalmente
+    construtiva. Isso reflete com precisão a situação teórica: a
+    equivalência entre indução matemática e indução forte é um fato
+    intuicionista, enquanto o Princípio da Boa Ordenação é um
+    princípio genuinamente clássico.
+
+
+    Poderíamos parar nessa constatação empírica, mas é possível ir
+    além e \textit{demonstrar} que o uso de lógica clássica não é uma
+    escolha de conveniência, e sim uma necessidade: o lema a seguir
+    mostra que o PBO, enunciado para um predicado arbitrário,
+    \textit{implica} o próprio terceiro excluído — e a prova dessa
+    implicação é totalmente construtiva.
+
+
+    A ideia é reduzir uma proposição arbitrária \coqdocvar{Q} a um problema de
+    minimização. Dado \coqdocvar{Q}, considere o predicado
+
+
+    \coqdocvar{P} \coqdocvar{n} := (\coqdocvar{n} = 1) \ensuremath{\lor} (\coqdocvar{n} = 0 \ensuremath{\land} \coqdocvar{Q})
+
+
+    Esse predicado é sempre habitado (o natural 1 o satisfaz
+    incondicionalmente), e o natural 0 o satisfaz se, e somente
+    se, \coqdocvar{Q} vale. Aplicando o PBO, obtemos um menor elemento \coqdocvar{m}, e
+    a análise de casos sobre \coqdocvar{m} decide \coqdocvar{Q}:
+
+
+
+\begin{itemize}
+\item  se \coqdocvar{m} = 0, então \coqdocvar{P} 0 vale, o que força \coqdocvar{Q};
+
+
+
+\item  se \coqdocvar{m} = 1, a minimalidade fornece \ensuremath{\lnot} \coqdocvar{P} 0, o que força \ensuremath{\lnot} \coqdocvar{Q};
+
+
+
+\item  \coqdocvar{m} \ensuremath{\ge} 2 é impossível, pois nenhum natural maior que 1
+      satisfaz \coqdocvar{P}.
+
+\end{itemize}
+
+
+    Em outras palavras: o menor elemento prometido pelo PBO funciona
+    como um \textit{oráculo} que decide qualquer proposição. Como o
+    terceiro excluído não é demonstrável na lógica intuicionista do
+    Coq, segue que nenhuma das direções \coqref{ind equiv.PIM}{\coqdocdefinition{PIM}} \ensuremath{\rightarrow} \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} e \coqref{ind equiv.PIF}{\coqdocdefinition{PIF}} \ensuremath{\rightarrow} \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}}
+    poderia ser provada sem axiomas clássicos: se fosse possível,
+    como o PIM é demonstrável construtivamente no Coq (via
+    \coqdocvar{nat\_ind}), o PBO seria um teorema, e por este lema o terceiro
+    excluído também seria — um absurdo. 
+\begin{coqdoccode}
+\coqdocemptyline
+\coqdocnoindent
+\coqdockw{Lemma} \coqdef{ind equiv.PBO implies classic}{PBO\_implies\_classic}{\coqdoclemma{PBO\_implies\_classic}}: \coqref{ind equiv.PBO}{\coqdocdefinition{PBO}} \coqexternalref{::type scope:x '->' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\rightarrow}}} \coqdockw{\ensuremath{\forall}} \coqdef{ind equiv.Q:26}{Q}{\coqdocbinder{Q}}: \coqdockw{Prop}, \coqref{ind equiv.Q:26}{\coqdocvariable{Q}} \coqexternalref{::type scope:x 'x5C/' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\lor}}} \coqexternalref{::type scope:'x7E' x}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Init.Logic}{\coqdocnotation{\ensuremath{\lnot}}} \coqref{ind equiv.Q:26}{\coqdocvariable{Q}}.\coqdoceol
+\coqdocemptyline
+\end{coqdoccode}
+O comando \coqdockw{Print} \coqdockw{Assumptions} \coqref{ind equiv.PBO implies classic}{\coqdoclemma{PBO\_implies\_classic}} confirma que
+    este lema é fechado sob o contexto global, isto é, não usa
+    axioma algum. Neste desenvolvimento, portanto, o PBO mostra-se
+    \textit{equivalente aos princípios clássicos} em um sentido preciso:
+    ele implica construtivamente o terceiro excluído (por este
+    lema) e, reciprocamente, toda demonstração de PBO a partir do
+    PIM depende de raciocínio clássico (por \coqref{ind equiv.PIF implies PBO}{\coqdoclemma{PIF\_implies\_PBO}}, que
+    usa \coqexternalref{NNPP}{http://coq.inria.fr/distrib/V8.18.0/stdlib//Coq.Logic.Classical\_Prop}{\coqdoclemma{NNPP}}). A fronteira entre o construtivo e o clássico neste
+    projeto está exatamente sobre o Princípio da Boa Ordenação. 
+\begin{coqdoccode}
+\coqdocemptyline
+\end{coqdoccode}
