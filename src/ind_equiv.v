@@ -2,6 +2,7 @@
 
 (* begin hide *)
 Require Import Arith Lia.
+Require Import Classical.
 (* end hide *)
 
 (** Seja [P] uma propriedade sobre os números naturais. O Princípio da Indução Matemática (PIM) pode ser enunciado da seguinte forma:  *)
@@ -98,6 +99,44 @@ Proof.
   destruct k as [| k'].
   - exact Hbase.
   - apply Hstep. apply IH. lia.
+Qed.
+
+(** *** PBO implica PIM
+
+    Este é o clássico argumento do _menor contraexemplo_, e é aqui
+    que a lógica clássica entra pela primeira vez. Queremos provar
+    [P n] para um [n] arbitrário, dados o caso base e o passo
+    indutivo. Raciocinamos por contradição (via [NNPP]): suponha
+    [~ P n]. Então o predicado [fun x => ~ P x] é habitado (por [n]),
+    e o PBO aplicado a ele fornece um _menor contraexemplo_: um
+    natural [m] tal que [~ P m] e todo [x < m] satisfaz [~ ~ P x].
+    Analisamos os dois casos possíveis para [m]:
+
+    - [m = 0]: então [~ P 0], contradizendo diretamente o caso base;
+
+    - [m = S m']: como [m' < S m'], a minimalidade fornece [~ ~ P m'];
+      por eliminação da dupla negação ([NNPP]), obtemos [P m'], e o
+      passo indutivo produz [P (S m')], contradizendo [~ P m].
+
+    Em ambos os casos chegamos ao absurdo, o que encerra a prova.
+    Note que o [NNPP] é usado em dois pontos: na estrutura externa
+    (provar [P n] por contradição) e na extração de [P m'] a partir
+    de [~ ~ P m']. Nenhum dos dois passos é válido em lógica
+    intuicionista, o que é coerente com o fato, visto em sala, de
+    que LPM %$\subset$% LPI %$\subset$% LPC em poder dedutivo. *)
+
+Lemma PBO_implies_PIM: PBO -> PIM.
+Proof.
+  intros Hpbo P Hbase Hstep n.
+  apply NNPP. intro HnPn.
+  destruct (Hpbo (fun x => ~ P x)) as [m [HnPm Hmin]].
+  { exists n. exact HnPn. }
+  destruct m as [| m'].
+  - (* o menor contraexemplo seria 0: contradiz o caso base *)
+    apply HnPm. exact Hbase.
+  - (* o menor contraexemplo seria S m': contradiz o passo *)
+    apply HnPm. apply Hstep.
+    apply NNPP. apply Hmin. lia.
 Qed.
 
 (** Prove que estes princípios são equivalentes: *)
