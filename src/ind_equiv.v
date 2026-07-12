@@ -176,15 +176,128 @@ Proof.
   apply (Hall n). exact Hn.
 Qed.
 
-(** Prove que estes princípios são equivalentes: *)
+(** ** Os teoremas de equivalência
+
+    Com as quatro implicações estabelecidas, os três teoremas do
+    enunciado seguem por composição. O primeiro é imediato a partir
+    dos dois primeiros lemas. *)
 
 Theorem PIM_equiv_PIF: PIM <-> PIF.
-Proof. Admitted.
+Proof.
+  split.
+  - apply PIM_implies_PIF.
+  - apply PIF_implies_PIM.
+Qed.
+
+(** Para a segunda equivalência, a direção [PBO -> PIM] é o lema do
+    menor contraexemplo. A direção [PIM -> PBO] é obtida compondo
+    [PIM -> PIF] com [PIF -> PBO]: em vez de provar essa implicação
+    do zero, reaproveitamos o trabalho já feito, o que torna a
+    formalização mais enxuta e evita duplicação de argumentos. *)
 
 Theorem PBO_equiv_PIM: PBO <-> PIM.
-Proof. Admitted.
+Proof.
+  split.
+  - apply PBO_implies_PIM.
+  - intro Hpim. apply PIF_implies_PBO.
+    apply PIM_implies_PIF. exact Hpim.
+Qed.
+
+(** A terceira equivalência também é obtida por composição:
+    [PBO -> PIF] é a composição de [PBO -> PIM] com [PIM -> PIF], e
+    [PIF -> PBO] é o quarto lema. Assim, as três equivalências
+    formam um "triângulo" fechado de implicações
+    (PIM %$\to$% PIF %$\to$% PBO %$\to$% PIM), do qual qualquer
+    equivalência par a par pode ser extraída. *)
 
 Theorem PBO_equiv_PIF: PBO <-> PIF.
-Proof. Admitted.
+Proof.
+  split.
+  - intro Hpbo. apply PIM_implies_PIF.
+    apply PBO_implies_PIM. exact Hpbo.
+  - apply PIF_implies_PBO.
+Qed.
 
-(** Repositório: %\url{https://github.com/flaviodemoura/ind_equiv}% *)
+(** ** Verificação dos axiomas utilizados
+
+    O comando [Print Assumptions PBO_equiv_PIF] confirma que a única
+    hipótese não construtiva usada em toda a formalização é o axioma
+    [classic : forall P : Prop, P \/ ~ P] (terceiro excluído),
+    proveniente da biblioteca [Classical]. O teorema [PIM_equiv_PIF],
+    por sua vez, não depende de axioma algum: sua prova é totalmente
+    construtiva. Isso reflete com precisão a situação teórica: a
+    equivalência entre indução matemática e indução forte é um fato
+    intuicionista, enquanto o Princípio da Boa Ordenação é um
+    princípio genuinamente clássico.
+
+    Poderíamos parar nessa constatação empírica, mas é possível ir
+    além e _demonstrar_ que o uso de lógica clássica não é uma
+    escolha de conveniência, e sim uma necessidade: o lema a seguir
+    mostra que o PBO, enunciado para um predicado arbitrário,
+    _implica_ o próprio terceiro excluído — e a prova dessa
+    implicação é totalmente construtiva.
+
+    A ideia é reduzir uma proposição arbitrária [Q] a um problema de
+    minimização. Dado [Q], considere o predicado
+
+    [P n := (n = 1) \/ (n = 0 /\ Q)]
+
+    Esse predicado é sempre habitado (o natural [1] o satisfaz
+    incondicionalmente), e o natural [0] o satisfaz se, e somente
+    se, [Q] vale. Aplicando o PBO, obtemos um menor elemento [m], e
+    a análise de casos sobre [m] decide [Q]:
+
+    - se [m = 0], então [P 0] vale, o que força [Q];
+
+    - se [m = 1], a minimalidade fornece [~ P 0], o que força [~ Q];
+
+    - [m >= 2] é impossível, pois nenhum natural maior que [1]
+      satisfaz [P].
+
+    Em outras palavras: o menor elemento prometido pelo PBO funciona
+    como um _oráculo_ que decide qualquer proposição. Como o
+    terceiro excluído não é demonstrável na lógica intuicionista do
+    Coq, segue que nenhuma das direções [PIM -> PBO] e [PIF -> PBO]
+    poderia ser provada sem axiomas clássicos: se fosse possível,
+    como o PIM é demonstrável construtivamente no Coq (via
+    [nat_ind]), o PBO seria um teorema, e por este lema o terceiro
+    excluído também seria — um absurdo. *)
+
+Lemma PBO_implies_classic: PBO -> forall Q: Prop, Q \/ ~ Q.
+Proof.
+  intros Hpbo Q.
+  destruct (Hpbo (fun n => n = 1 \/ (n = 0 /\ Q))) as [m [Hm Hmin]].
+  - (* o predicado é habitado: 1 o satisfaz *)
+    exists 1. left. reflexivity.
+  - destruct m as [| [| m']].
+    + (* m = 0: P 0 vale, logo Q *)
+      destruct Hm as [H01 | [_ HQ]].
+      * discriminate H01.
+      * left. exact HQ.
+    + (* m = 1: a minimalidade dá ~ P 0, logo ~ Q *)
+      right. intro HQ.
+      apply (Hmin 0).
+      * lia.
+      * right. split. reflexivity. exact HQ.
+    + (* m >= 2: impossível *)
+      destruct Hm as [H | [H _]]; discriminate H.
+Qed.
+
+(** O comando [Print Assumptions PBO_implies_classic] confirma que
+    este lema é fechado sob o contexto global, isto é, não usa
+    axioma algum. Neste desenvolvimento, portanto, o PBO mostra-se
+    _equivalente aos princípios clássicos_ em um sentido preciso:
+    ele implica construtivamente o terceiro excluído (por este
+    lema) e, reciprocamente, toda demonstração de PBO a partir do
+    PIM depende de raciocínio clássico (por [PIF_implies_PBO], que
+    usa [NNPP]). A fronteira entre o construtivo e o clássico neste
+    projeto está exatamente sobre o Princípio da Boa Ordenação. *)
+
+(* begin hide *)
+Print Assumptions PIM_equiv_PIF.
+Print Assumptions PBO_equiv_PIF.
+Print Assumptions PBO_implies_classic.
+(* end hide *)
+
+(** Repositório original do professor:
+    %\url{https://github.com/flaviodemoura/ind_equiv}% *)
