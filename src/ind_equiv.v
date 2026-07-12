@@ -139,6 +139,43 @@ Proof.
     apply NNPP. apply Hmin. lia.
 Qed.
 
+(** *** PIF implica PBO
+
+    Esta direção também exige lógica clássica, pois o PBO pede a
+    _existência_ de um mínimo, e a estratégia natural é prová-la por
+    contradição. Suponha que exista [n] com [P n], mas que _não_
+    exista o menor elemento prometido pelo PBO. Mostramos então, por
+    indução forte, que na verdade nenhum natural satisfaz [P] — o
+    que contradiz a hipótese de que [P] é habitado.
+
+    O passo da indução forte é o coração do argumento: seja [k]
+    arbitrário e suponha (hipótese de indução) que nenhum [m < k]
+    satisfaz [P]. Se, ainda assim, valesse [P k], então [k] seria
+    exatamente um menor elemento de [P]: ele satisfaz [P], e todos os
+    menores não satisfazem (pela hipótese de indução). Isso contradiz
+    a suposição de que o mínimo não existe. Logo [~ P k], fechando o
+    passo indutivo.
+
+    O uso de [NNPP] aparece na estrutura externa da prova: para
+    provar a existência do mínimo por contradição, assumimos a sua
+    negação e derivamos o absurdo. Provar uma fórmula existencial
+    dessa maneira (sem exibir uma testemunha explícita) é um
+    raciocínio essencialmente clássico. *)
+
+Lemma PIF_implies_PBO: PIF -> PBO.
+Proof.
+  intros Hpif P Hex.
+  destruct Hex as [n Hn].
+  apply NNPP. intro Hno.
+  assert (Hall: forall x, ~ P x).
+  { apply (Hpif (fun x => ~ P x)).
+    intros k IH HPk.
+    apply Hno. exists k. split.
+    - exact HPk.
+    - exact IH. }
+  apply (Hall n). exact Hn.
+Qed.
+
 (** Prove que estes princípios são equivalentes: *)
 
 Theorem PIM_equiv_PIF: PIM <-> PIF.
